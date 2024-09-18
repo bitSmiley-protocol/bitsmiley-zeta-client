@@ -1,2 +1,2 @@
-import { ZetaBtcClient } from "./client";
-import { BitSmileyCalldataGenerator } from "./bitsmiley";
+export * from './client';
+export * from './bitsmiley';
