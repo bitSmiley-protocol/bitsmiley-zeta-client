@@ -42,13 +42,12 @@ export class BitSmileyCalldataGenerator {
      * @param signature The signature that proves the caller owns the "ownerAddress"
      */
     public openVault(collateralId: string, bitusd: string, ownerAddress: string, signature: string): string {
-        const params = new ethers.AbiCoder().encode(["bytes32", "address", "int256", "bytes"], [
-            collateralId, ownerAddress, ethers.parseEther(bitusd), signature,
-        ]);
+        const params = new ethers.AbiCoder().encode(
+            ["bytes32", "address", "int256", "bytes"], 
+            [collateralId, ownerAddress, ethers.parseEther(bitusd), signature]
+        );
 
-        let message = new ethers.AbiCoder().encode(["uint8", "bytes"], [
-            Operation.OpenVault, params
-        ]);
+        let message = new ethers.AbiCoder().encode(["uint8", "bytes"], [Operation.OpenVault, params]);
 
         return trimOx(this.zetaConnectorAddress) + trimOx(message);
     }

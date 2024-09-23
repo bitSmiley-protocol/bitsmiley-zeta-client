@@ -16,7 +16,6 @@ const rng = randomBytes;
 export const DEFAULT_CONFIG = {
     tss: {
         mainnet: "bc1p24r8dky87hvauvpc3h798juvh6e3h0fw4sjfs2m4zuq99rd8p2jqt82578",
-        regtest: "bcrt1q7jaj5wvxvadwfz8ws6x8jdhgvrtrfn7n8sh4ks",
         testnet: "tb1qy9pqmk2pd9sv63g27jt8r657wy0d9ueeh0nqur",
     }
 };
@@ -65,22 +64,15 @@ export class ZetaBtcClient {
     /**
      * Call a target address and passing the data call.
      * 
-     * @param address The target zetachain evm address
-     * @param calldata The calldata that will be invoked on Zetachain
+     * @param memo The calldata that will be invoked on Zetachain
      */
     public call(
-        address: Address,
-        calldata: Buffer,
+        memo: Buffer,
     ): Address {
-        if (calldata.length <= 80) {
+        if (memo.length <= 80) {
             throw Error("Use op return instead");
         }
-
-        if (address.startsWith("0x")) {
-            address = address.substring(2);
-        }
-
-        return this.callWithWitness(Buffer.concat([Buffer.from(address, "hex"), calldata]));
+        return this.callWithWitness(memo);
     }
 
     public buildRevealTxn(commitTxn: BtcInput, commitAmount: number, feeRate: number): Buffer {
