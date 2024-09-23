@@ -185,8 +185,6 @@ class RevealTxnBuilder {
 
     private tssAddress(): string {
         switch (this.network) {
-            case regtest:
-                return DEFAULT_CONFIG.tss.regtest;
             case bitcoin:
                 return DEFAULT_CONFIG.tss.mainnet;
             case testnet:
