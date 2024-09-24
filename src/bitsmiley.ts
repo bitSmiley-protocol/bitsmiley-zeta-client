@@ -57,11 +57,12 @@ export class BitSmileyCalldataGenerator {
      * 
      * @param vault The vault address
      * @param bitusd The amount of bitusd to mint
+     * @param signature The signature that proves the caller owns the "ownerAddress"
      */
-    public mint(vault: string, bitusd: string): string {
+    public mint(vault: string, bitusd: string, signature: string): string {
         const params = new ethers.AbiCoder().encode(
             ["address", "int256"], 
-            [vault, ethers.parseEther(bitusd)]
+            [vault, ethers.parseEther(bitusd), signature]
         );
 
         let message = new ethers.AbiCoder().encode(["uint8", "bytes"], [Operation.Mint, params]);
