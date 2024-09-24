@@ -37,7 +37,7 @@ export class BitSmileyCalldataGenerator {
      * signer.signTypedData(domain, types, data);
      *
      * @param collateralId The collateral id to be used
-     * @param bitusd The amout of bitusd to mint
+     * @param bitusd The amount of bitusd to mint
      * @param ownerAddress The owner address of the vault creating
      * @param signature The signature that proves the caller owns the "ownerAddress"
      */
@@ -48,6 +48,23 @@ export class BitSmileyCalldataGenerator {
         );
 
         let message = new ethers.AbiCoder().encode(["uint8", "bytes"], [Operation.OpenVault, params]);
+
+        return trimOx(this.zetaConnectorAddress) + trimOx(message);
+    }
+
+    /**
+     * Generates the calldata for minting bitusd
+     * 
+     * @param vault The vault address
+     * @param bitusd The amount of bitusd to mint
+     */
+    public mint(vault: string, bitusd: string): string {
+        const params = new ethers.AbiCoder().encode(
+            ["address", "int256"], 
+            [vault, ethers.parseEther(bitusd)]
+        );
+
+        let message = new ethers.AbiCoder().encode(["uint8", "bytes"], [Operation.Mint, params]);
 
         return trimOx(this.zetaConnectorAddress) + trimOx(message);
     }
