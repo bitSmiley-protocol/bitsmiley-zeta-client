@@ -55,14 +55,14 @@ export class BitSmileyCalldataGenerator {
     /**
      * Generates the calldata for minting bitusd
      * 
-     * @param vault The vault address
+     * @param ownerAddress The owner address of the vault creating
      * @param bitusd The amount of bitusd to mint
      * @param signature The signature that proves the caller owns the "ownerAddress"
      */
-    public mint(vault: string, bitusd: string, signature: string): string {
+    public mint(ownerAddress: string, bitusd: string, signature: string): string {
         const params = new ethers.AbiCoder().encode(
-            ["address", "int256"], 
-            [vault, ethers.parseEther(bitusd), signature]
+            ["address", "int256", "bytes"], 
+            [ownerAddress, ethers.parseEther(bitusd), signature]
         );
 
         let message = new ethers.AbiCoder().encode(["uint8", "bytes"], [Operation.Mint, params]);
