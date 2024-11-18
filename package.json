@@ -1,6 +1,6 @@
 {
 	"name": "zeta-btc-client",
-	"version": "0.0.8",
+	"version": "0.0.9",
 	"description": "The Zetachain BTC client",
 	"main": "./lib/index.js",
 	"types": "./lib/index.d.ts",
