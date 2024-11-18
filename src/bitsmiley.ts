@@ -1,8 +1,34 @@
 import { ethers } from "ethers";
+import { encodeZeta } from "./encoding/v1";
+import { BtcAddress } from "./client";
 
 enum Operation {
     OpenVault,
     Mint,
+}
+
+interface CallOptions {
+    revertAddress: BtcAddress,
+}
+
+interface OpenVaultOptions {
+    // The collateral id to be used
+    collateralId: string,
+    // The amount of bitusd to mint
+    bitusd: string,
+    // The owner address of the vault creating
+    ownerAddress: string,
+    // The signature that proves the caller owns the "ownerAddress"
+    signature: string
+}
+
+interface MintOptions {
+    // The amount of bitusd to mint
+    bitusd: string,
+    // The owner address of the vault creating
+    ownerAddress: string,
+    // The signature that proves the caller owns the "ownerAddress"
+    signature: string
 }
 
 export class BitSmileyCalldataGenerator {
@@ -35,39 +61,33 @@ export class BitSmileyCalldataGenerator {
      *   ],
      * };
      * signer.signTypedData(domain, types, data);
-     *
-     * @param collateralId The collateral id to be used
-     * @param bitusd The amount of bitusd to mint
-     * @param ownerAddress The owner address of the vault creating
-     * @param signature The signature that proves the caller owns the "ownerAddress"
      */
-    public openVault(collateralId: string, bitusd: string, ownerAddress: string, signature: string): string {
+    public openVault(callOptions: CallOptions, openVaultParams: OpenVaultOptions): string {
         const params = new ethers.AbiCoder().encode(
             ["bytes32", "address", "int256", "bytes"], 
-            [collateralId, ownerAddress, ethers.parseEther(bitusd), signature]
+            [
+                openVaultParams.collateralId,
+                openVaultParams.ownerAddress,
+                ethers.parseEther(openVaultParams.bitusd),
+                openVaultParams.signature
+            ]
         );
 
         let message = new ethers.AbiCoder().encode(["uint8", "bytes"], [Operation.OpenVault, params]);
-
-        return trimOx(this.zetaConnectorAddress) + trimOx(message);
+        return encodeZeta(trimOx(this.zetaConnectorAddress), Buffer.from(trimOx(message), "hex"), callOptions.revertAddress);
     }
 
     /**
      * Generates the calldata for minting bitusd
-     * 
-     * @param ownerAddress The owner address of the vault creating
-     * @param bitusd The amount of bitusd to mint
-     * @param signature The signature that proves the caller owns the "ownerAddress"
      */
-    public mint(ownerAddress: string, bitusd: string, signature: string): string {
+    public mint(callOptions: CallOptions, mintOptions: MintOptions): string {
         const params = new ethers.AbiCoder().encode(
             ["address", "int256", "bytes"], 
-            [ownerAddress, ethers.parseEther(bitusd), signature]
+            [mintOptions.ownerAddress, ethers.parseEther(mintOptions.bitusd), mintOptions.signature]
         );
 
         let message = new ethers.AbiCoder().encode(["uint8", "bytes"], [Operation.Mint, params]);
-
-        return trimOx(this.zetaConnectorAddress) + trimOx(message);
+        return encodeZeta(trimOx(this.zetaConnectorAddress), Buffer.from(trimOx(message), "hex"), callOptions.revertAddress);
     }
 }
 

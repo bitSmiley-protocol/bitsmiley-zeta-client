@@ -1,0 +1,145 @@
+import { Address, BtcAddress } from "../client";
+import { ethers } from "ethers";
+
+// Memo identifier byte
+const MemoIdentifier = 0x5A;
+
+// Enums
+const OpCode = Object.freeze({
+    Deposit: 0b0000,
+    DepositAndCall: 0b0001,
+    Call: 0b0010,
+    Invalid: 0b0011,
+});
+
+const EncodingFormat = Object.freeze({
+    EncodingFmtABI: 0b0000,
+    EncodingFmtCompactShort: 0b0001,
+    EncodingFmtCompactLong: 0b0010,
+});
+
+// Header Class
+class Header {
+    encodingFmt: any;
+    opCode: any;
+
+    constructor(encodingFmt, opCode) {
+        this.encodingFmt = encodingFmt;
+        this.opCode = opCode;
+    }
+}
+
+// FieldsV0 Class
+class FieldsV0 {
+    receiver: Address;
+    payload: Buffer;
+    revertAddress: BtcAddress;
+
+    constructor(receiver: Address, payload: Buffer, revertAddress: BtcAddress) {
+        this.receiver = receiver;
+        this.payload = payload;
+        this.revertAddress = revertAddress;
+    }
+}
+
+export function encodeZeta(zetaReceiver: Address, payload: Buffer, revertAddress: BtcAddress): string {
+    // Create memo header
+    const header = new Header(EncodingFormat.EncodingFmtABI, OpCode.DepositAndCall);
+
+    // Create memo fields
+    const fields = new FieldsV0(zetaReceiver, payload, revertAddress);
+
+    return bytesToHex(encodeToBytes(header, fields));
+}
+
+// Main Encoding Function
+function encodeToBytes(header, fields) {
+    if (!header || !fields) {
+        throw new Error("Header and fields are required");
+    }
+
+    // Construct Header Bytes
+    const headerBytes = new Uint8Array(4);
+    headerBytes[0] = MemoIdentifier;
+    headerBytes[1] = (0x00 << 4) | (header.encodingFmt & 0x0F);
+    headerBytes[2] = ((header.opCode & 0x0F) << 4) | 0x00;
+    headerBytes[3] = 0b00000111;
+
+    // Encode Fields
+    let encodedFields;
+    switch (header.encodingFmt) {
+        case EncodingFormat.EncodingFmtABI:
+            encodedFields = encodeFieldsABI(fields);
+            break;
+        case EncodingFormat.EncodingFmtCompactShort:
+        case EncodingFormat.EncodingFmtCompactLong:
+            encodedFields = encodeFieldsCompact(header.encodingFmt, fields);
+            break;
+        default:
+            throw new Error("Unsupported encoding format");
+    }
+
+    // Combine Header and Fields
+    return new Uint8Array(Buffer.concat([Buffer.from(headerBytes), Buffer.from(encodedFields)]));
+}
+
+// Helper: ABI Encoding
+function encodeFieldsABI(fields) {
+    const types = ["address", "bytes", "string"];
+    const values = [fields.receiver, fields.payload, fields.revertAddress];
+    const encodedData = new ethers.AbiCoder().encode(types, values);
+    return Uint8Array.from(Buffer.from(encodedData.slice(2), "hex"));
+}
+
+// Helper: Compact Encoding
+function encodeFieldsCompact(compactFmt, fields) {
+    const encodedReceiver = Buffer.from(hexStringToBytes(fields.receiver));
+    const encodedPayload = encodeDataCompact(compactFmt, fields.payload);
+    const encodedRevertAddress = encodeDataCompact(compactFmt, new TextEncoder().encode(fields.revertAddress));
+
+    return new Uint8Array(Buffer.concat([encodedReceiver, encodedPayload, encodedRevertAddress]));
+}
+
+// Helper: Compact Data Encoding
+function encodeDataCompact(compactFmt, data) {
+    const dataLen = data.length;
+    let encodedLength;
+
+    switch (compactFmt) {
+        case EncodingFormat.EncodingFmtCompactShort:
+            if (dataLen > 255) {
+                throw new Error("Data length exceeds 255 bytes for EncodingFmtCompactShort");
+            }
+            encodedLength = Buffer.from([dataLen]);
+            break;
+        case EncodingFormat.EncodingFmtCompactLong:
+            if (dataLen > 65535) {
+                throw new Error("Data length exceeds 65535 bytes for EncodingFmtCompactLong");
+            }
+            encodedLength = Buffer.alloc(2);
+            encodedLength.writeUInt16LE(dataLen);
+            break;
+        default:
+            throw new Error("Unsupported compact format");
+    }
+
+    return Buffer.concat([encodedLength, data]);
+}
+
+function hexStringToBytes(hexString: string): Uint8Array {
+    if (hexString.length % 2 !== 0) {
+        throw new Error("Hex string must have an even length");
+    }
+
+    const bytes = new Uint8Array(hexString.length / 2);
+    for (let i = 0; i < hexString.length; i += 2) {
+        bytes[i / 2] = parseInt(hexString.substr(i, 2), 16);
+    }
+    return bytes;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+    return Array.from(bytes)
+        .map(byte => byte.toString(16).padStart(2, '0')) // Convert each byte to a 2-digit hex
+        .join('');
+}
