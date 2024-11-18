@@ -31,6 +31,11 @@ export interface BtcInput {
     idx: number,
 }
 
+const SAMPLE_BTC_INPUT = {
+    txn: "06a6b0229329e2d801155e819647ec03a4a6742af7a55e093e01f7c244e86048",
+    idx: 0
+};
+
 /** 
  * The client for interracting with Zetachain in BTC, providing basic util methods.
  * 
@@ -59,6 +64,12 @@ export class ZetaBtcClient {
 
     public static mainnet(): ZetaBtcClient {
         return new ZetaBtcClient(bitcoin);
+    }
+
+    public estimateRevealTxnFee(memo: Buffer, commitAmount: number, feeRate: number): number {
+        this.callWithWitness(memo);
+        this.reveal.addInput(SAMPLE_BTC_INPUT, commitAmount);
+        return this.reveal.estimateFee(commitAmount, feeRate);
     }
 
     /**
@@ -125,6 +136,47 @@ class RevealTxnBuilder {
     }
 
     public with_commit_tx(commitTxn: BtcInput, commitAmount: number, feeRate: number): RevealTxnBuilder {
+        // const scriptTree: Taptree = { output: this.leafScript };
+
+        // const { output, witness } = payments.p2tr({
+        //     internalPubkey: toXOnly(this.key.publicKey),
+        //     scriptTree,
+        //     redeem: {
+        //       output: this.leafScript,
+        //       redeemVersion: LEAF_VERSION_TAPSCRIPT,
+        //     },
+        //     network: this.network,
+        // });
+
+        // this.psbt.addInput({
+        //     hash: commitTxn.txn.toString(),
+        //     index: commitTxn.idx,
+        //     witnessUtxo: { value: commitAmount, script: output! },
+        //     tapLeafScript: [
+        //       {
+        //         leafVersion: LEAF_VERSION_TAPSCRIPT,
+        //         script: this.leafScript,
+        //         controlBlock: witness![witness!.length - 1],
+        //       },
+        //     ],
+        // });
+
+        this.addInput(commitTxn, commitAmount);
+
+        this.psbt.addOutput({
+            value: commitAmount - this.estimateFee(commitAmount, feeRate),
+            address: this.tssAddress(),
+        });
+
+        this.psbt.signAllInputs(this.key);
+        this.psbt.finalizeAllInputs();
+
+        this.psbt.toHex();
+
+        return this;
+    }
+
+    public addInput(commitTxn: BtcInput, commitAmount: number) {
         const scriptTree: Taptree = { output: this.leafScript };
 
         const { output, witness } = payments.p2tr({
@@ -149,25 +201,13 @@ class RevealTxnBuilder {
               },
             ],
         });
-
-        this.psbt.addOutput({
-            value: commitAmount - this.estimateFee(commitAmount, feeRate),
-            address: this.tssAddress(),
-        });
-
-        this.psbt.signAllInputs(this.key);
-        this.psbt.finalizeAllInputs();
-
-        this.psbt.toHex();
-
-        return this;
     }
 
     public dump(): Buffer {
         return this.psbt.extractTransaction(true).toBuffer();
     }
 
-    private estimateFee(amount: number, feeRate: number): number {
+    public estimateFee(amount: number, feeRate: number): number {
         const cloned = this.psbt.clone();
 
         cloned.addOutput({
