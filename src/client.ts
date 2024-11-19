@@ -1,5 +1,5 @@
 import { initEccLib, payments, Psbt } from "bitcoinjs-lib";
-import { bitcoin, Network, regtest, testnet } from "bitcoinjs-lib/src/networks";
+import { bitcoin, Network, testnet } from "bitcoinjs-lib/src/networks";
 import BIP32Factory, { BIP32Interface } from 'bip32';
 import * as ecc from 'tiny-secp256k1';
 import randomBytes from "randombytes";
@@ -66,10 +66,11 @@ export class ZetaBtcClient {
         return new ZetaBtcClient(bitcoin);
     }
 
-    public estimateRevealTxnFee(memo: Buffer, commitAmount: number, feeRate: number): number {
-        this.callWithWitness(memo);
-        this.reveal.addInput(SAMPLE_BTC_INPUT, commitAmount);
-        return this.reveal.estimateFee(commitAmount, feeRate);
+    public static estimateRevealTxnFee(network: Network, memo: Buffer, commitAmount: number, feeRate: number): number {
+        const client = new ZetaBtcClient(network);
+        client.callWithWitness(memo);
+        client.reveal.addInput(SAMPLE_BTC_INPUT, commitAmount);
+        return client.reveal.estimateFee(commitAmount, feeRate);
     }
 
     /**
