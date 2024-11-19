@@ -26,6 +26,7 @@ export * from './bitsmiley';
 
 //     const fee = ZetaBtcClient.estimateRevealTxnFee(testnet, calldata, deposit, feeRate);
 //     const total = deposit + fee;
+//     console.log(total);
 
 //     const zetaClient = ZetaBtcClient.testnet();
 //     const address = zetaClient.call(calldata);

@@ -231,7 +231,7 @@ class RevealTxnBuilder {
             case testnet:
                 return DEFAULT_CONFIG.tss.testnet;
             default:
-                throw Error("not supported");
+                throw Error(`not supporting ${this.network}`);
         }
     }
 }
