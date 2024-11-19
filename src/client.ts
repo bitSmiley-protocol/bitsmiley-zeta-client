@@ -24,6 +24,11 @@ export const DEFAULT_CONFIG = {
 export type Address = String;
 export type BtcAddress = String;
 
+export enum NETWORK {
+    testnet,
+    mainnet,
+}
+
 /// The BTC transactioin hash returned
 export type BtcTxnHash = String;
 export interface BtcInput {
@@ -50,23 +55,23 @@ const SAMPLE_BTC_INPUT = {
  */
 export class ZetaBtcClient {
     /** The BTC network interracting with */
-    readonly network: Network;
+    readonly network: NETWORK;
 
     private reveal: RevealTxnBuilder | null;
 
-    private constructor(network: Network) {
+    private constructor(network: NETWORK) {
         this.network = network;
     }
 
     public static testnet(): ZetaBtcClient {
-        return new ZetaBtcClient(testnet);
+        return new ZetaBtcClient(NETWORK.testnet);
     }
 
     public static mainnet(): ZetaBtcClient {
-        return new ZetaBtcClient(bitcoin);
+        return new ZetaBtcClient(NETWORK.mainnet);
     }
 
-    public static estimateRevealTxnFee(network: Network, memo: Buffer, commitAmount: number, feeRate: number): number {
+    public static estimateRevealTxnFee(network: NETWORK, memo: Buffer, commitAmount: number, feeRate: number): number {
         const client = new ZetaBtcClient(network);
         client.callWithWitness(memo);
         client.reveal.addInput(SAMPLE_BTC_INPUT, commitAmount);
@@ -105,7 +110,7 @@ export class ZetaBtcClient {
     private callWithWitness(
         data: Buffer,
     ): Address {
-        const internalKey = bip32.fromSeed(rng(64), this.network);
+        const internalKey = bip32.fromSeed(rng(64), mapNetwork(this.network));
 
         const leafScript = this.genLeafScript(internalKey.publicKey, data);
 
@@ -114,7 +119,7 @@ export class ZetaBtcClient {
         const { address: commitAddress } = payments.p2tr({
             internalPubkey: toXOnly(internalKey.publicKey),
             scriptTree,
-            network: this.network,
+            network: mapNetwork(this.network),
         });
 
         this.reveal = new RevealTxnBuilder(internalKey, leafScript, this.network);
@@ -127,10 +132,10 @@ class RevealTxnBuilder {
     private psbt: Psbt;
     private key: BIP32Interface;
     private leafScript: Buffer;
-    private network: Network
+    private network: NETWORK
 
-    constructor(key: BIP32Interface, leafScript: Buffer, network: Network) {
-        this.psbt = new Psbt({ network });;
+    constructor(key: BIP32Interface, leafScript: Buffer, network: NETWORK) {
+        this.psbt = new Psbt({ network: mapNetwork(network) });;
         this.key = key;
         this.leafScript = leafScript;
         this.network = network;
@@ -187,7 +192,7 @@ class RevealTxnBuilder {
               output: this.leafScript,
               redeemVersion: LEAF_VERSION_TAPSCRIPT,
             },
-            network: this.network,
+            network: mapNetwork(this.network),
         });
 
         this.psbt.addInput({
@@ -226,12 +231,19 @@ class RevealTxnBuilder {
 
     private tssAddress(): string {
         switch (this.network) {
-            case bitcoin:
+            case NETWORK.mainnet:
                 return DEFAULT_CONFIG.tss.mainnet;
-            case testnet:
+            case NETWORK.testnet:
                 return DEFAULT_CONFIG.tss.testnet;
-            default:
-                throw Error(`not supporting ${JSON.stringify(this.network)}`);
         }
+    }
+}
+
+function mapNetwork(network: NETWORK): Network {
+    switch (network) {
+        case NETWORK.mainnet:
+            return bitcoin;
+        case NETWORK.testnet:
+            return testnet;
     }
 }

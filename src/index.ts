@@ -2,8 +2,7 @@ export * from './client';
 export * from './bitsmiley';
 
 // import { BitSmileyCalldataGenerator } from './bitsmiley';
-// import { ZetaBtcClient } from './client';
-// import { testnet } from "bitcoinjs-lib/src/networks";
+// import { NETWORK, ZetaBtcClient } from './client';
 
 // function main() {
 //     const client = new BitSmileyCalldataGenerator("0xE869b85987D86d8fBb8913f97A705B4741edE86E");
@@ -24,7 +23,7 @@ export * from './bitsmiley';
 //     const deposit = 200000;
 //     const feeRate = 1600;
 
-//     const fee = ZetaBtcClient.estimateRevealTxnFee(testnet, calldata, deposit, feeRate);
+//     const fee = ZetaBtcClient.estimateRevealTxnFee(NETWORK.testnet, calldata, deposit, feeRate);
 //     const total = deposit + fee;
 //     console.log(total);
 
