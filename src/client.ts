@@ -17,6 +17,11 @@ export const DEFAULT_CONFIG = {
     tss: {
         mainnet: "bc1p24r8dky87hvauvpc3h798juvh6e3h0fw4sjfs2m4zuq99rd8p2jqt82578",
         testnet: "tb1qy9pqmk2pd9sv63g27jt8r657wy0d9ueeh0nqur",
+    },
+    /// The minitial deposit fee required for zeta cross chain txns, in satoshi
+    minDepositFee: {
+        mainnet: 15232,
+        testnet: 15232
     }
 };
 
@@ -34,6 +39,16 @@ export type BtcTxnHash = String;
 export interface BtcInput {
     txn: BtcTxnHash,
     idx: number,
+}
+
+/// Obtain the minitial deposit fee for the target network, in satoshi
+export function getMinDepositFee(network: NETWORK): number {
+    switch (network) {
+        case NETWORK.mainnet:
+            return DEFAULT_CONFIG.minDepositFee.mainnet;
+        case NETWORK.testnet:
+            return DEFAULT_CONFIG.minDepositFee.testnet;
+    }
 }
 
 const SAMPLE_BTC_INPUT = {
