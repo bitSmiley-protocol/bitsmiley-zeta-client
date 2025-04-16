@@ -148,35 +148,15 @@ class RevealTxnBuilder {
     }
 
     public with_commit_tx(commitTxn: BtcInput, commitAmount: number, feeRate: number): RevealTxnBuilder {
-        // const scriptTree: Taptree = { output: this.leafScript };
-
-        // const { output, witness } = payments.p2tr({
-        //     internalPubkey: toXOnly(this.key.publicKey),
-        //     scriptTree,
-        //     redeem: {
-        //       output: this.leafScript,
-        //       redeemVersion: LEAF_VERSION_TAPSCRIPT,
-        //     },
-        //     network: this.network,
-        // });
-
-        // this.psbt.addInput({
-        //     hash: commitTxn.txn.toString(),
-        //     index: commitTxn.idx,
-        //     witnessUtxo: { value: commitAmount, script: output! },
-        //     tapLeafScript: [
-        //       {
-        //         leafVersion: LEAF_VERSION_TAPSCRIPT,
-        //         script: this.leafScript,
-        //         controlBlock: witness![witness!.length - 1],
-        //       },
-        //     ],
-        // });
-
         this.addInput(commitTxn, commitAmount);
 
+        const fee = this.estimateFee(commitAmount, feeRate);
+        if (fee > commitAmount) {
+            throw Error(`Fee ${fee} more than commit amount: ${commitAmount}. Try increase commit amount.`);
+        }
+
         this.psbt.addOutput({
-            value: commitAmount - this.estimateFee(commitAmount, feeRate),
+            value: commitAmount - fee,
             address: this.tssAddress(),
         });
 
