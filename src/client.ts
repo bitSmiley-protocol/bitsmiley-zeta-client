@@ -15,7 +15,7 @@ const rng = randomBytes;
 
 export const DEFAULT_CONFIG = {
     tss: {
-        mainnet: "bc1p24r8dky87hvauvpc3h798juvh6e3h0fw4sjfs2m4zuq99rd8p2jqt82578",
+        mainnet: "bc1qm24wp577nk8aacckv8np465z3dvmu7ry45el6y",
         testnet: "tb1qy9pqmk2pd9sv63g27jt8r657wy0d9ueeh0nqur",
     }
 };
